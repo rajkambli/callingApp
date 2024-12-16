@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:call_log/call_log.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../utility.dart';
+
 class CallLogScreen extends StatefulWidget {
   const CallLogScreen({Key? key}) : super(key: key);
 
@@ -11,6 +13,7 @@ class CallLogScreen extends StatefulWidget {
 
 class _CallLogScreenState extends State<CallLogScreen> {
   List<CallLogEntry> _callLogs = [];
+  bool _isError = false;
 
   @override
   void initState() {
@@ -19,24 +22,37 @@ class _CallLogScreenState extends State<CallLogScreen> {
   }
 
   Future<void> _fetchCallLogs() async {
+    bool permissionGranted = await PermissionUtils.requestContactPermission(context).timeout(Duration(seconds: 10),
+        onTimeout: () {
+      setState(() {
+        _isError = true;
+      });
+      return false;
+    });
 
-    if (await Permission.phone.request().isGranted) {
+    if (permissionGranted) {
       try {
-
         Iterable<CallLogEntry> entries = await CallLog.get();
         setState(() {
           _callLogs = entries.toList();
+          _isError = false;
         });
       } catch (e) {
-
+        setState(() {
+          _callLogs = [];
+          _isError = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load call logs: $e')),
         );
       }
     } else {
-
+      setState(() {
+        _callLogs = [];
+        _isError = true;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phone permission is required.')),
+        const SnackBar(content: Text('Contacts permission is required.')),
       );
     }
   }
@@ -47,7 +63,14 @@ class _CallLogScreenState extends State<CallLogScreen> {
       appBar: AppBar(
         title: const Text('Call Logs'),
       ),
-      body: _callLogs.isEmpty
+      body: _isError
+          ? const Center(
+        child: Text(
+          'Failed to fetch call logs.',
+          style: TextStyle(fontSize: 18, color: Colors.red),
+        ),
+      )
+          : _callLogs.isEmpty
           ? const Center(
         child: CircularProgressIndicator(),
       )
@@ -62,7 +85,9 @@ class _CallLogScreenState extends State<CallLogScreen> {
                   : log.callType == CallType.outgoing
                   ? Icons.call_made
                   : Icons.call_missed,
-              color: log.callType == CallType.missed ? Colors.red : Colors.green,
+              color: log.callType == CallType.missed
+                  ? Colors.red
+                  : Colors.green,
             ),
             title: Text(log.name ?? 'Unknown'),
             subtitle: Text(

@@ -81,8 +81,8 @@ class _DialerScreenState extends State<DialerScreen> {
               crossAxisCount: 3,
               padding: EdgeInsets.all(40),
               shrinkWrap: true,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
+              crossAxisSpacing: 30,
+              mainAxisSpacing: 30,
               children: [
                 for (var i = 1; i <= 9; i++) _dialButton('$i'),
                 _dialButton('*'),
@@ -98,6 +98,7 @@ class _DialerScreenState extends State<DialerScreen> {
               alignment: Alignment.center,
               children: [
                 FloatingActionButton(
+
                   backgroundColor: Colors.green,
                   onPressed: _makeCall,
                   child: const Icon(Icons.call, color: Colors.white, size: 32),
